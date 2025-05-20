@@ -6,7 +6,6 @@ use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::*;
 use anchor_spl::{token::spl_token, token_2022::spl_token_2022::extension::*};
 use solana_sdk::account::Account;
 use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
-use spl_transfer_hook_interface::offchain::add_extra_account_metas_for_execute;
 
 const ONE_IN_BASIS_POINTS: u128 = MAX_FEE_BASIS_POINTS as u128;
 
@@ -74,22 +73,21 @@ pub async fn get_extra_account_metas_for_transfer_hook(
             mint_account.data.as_ref(),
         )?;
 
-    if let Some(transfer_hook_program_id) = transfer_hook::get_program_id(&mint_state) {
-        let mut transfer_ix =
-            anchor_spl::token_2022::spl_token_2022::instruction::transfer_checked(
-                &mint_account.owner,
-                &Pubkey::default(),
-                &mint,
-                &Pubkey::default(),
-                &Pubkey::default(),
-                &[],
-                0,
-                mint_state.base.decimals,
-            )?;
+    if let Some(_transfer_hook_program_id) = transfer_hook::get_program_id(&mint_state) {
+        let transfer_ix = anchor_spl::token_2022::spl_token_2022::instruction::transfer_checked(
+            &mint_account.owner,
+            &Pubkey::default(),
+            &mint,
+            &Pubkey::default(),
+            &Pubkey::default(),
+            &[],
+            0,
+            mint_state.base.decimals,
+        )?;
 
         let blocking_rpc_client = BlockingRpcClient::new(rpc_client.url());
 
-        let data_fetcher = |address: Pubkey| {
+        let _data_fetcher = |address: Pubkey| {
             let account = blocking_rpc_client
                 .get_account(&address)
                 .map(|account| account.data);
@@ -99,19 +97,6 @@ pub async fn get_extra_account_metas_for_transfer_hook(
                 )
             }
         };
-
-        add_extra_account_metas_for_execute(
-            &mut transfer_ix,
-            &transfer_hook_program_id,
-            &Pubkey::default(),
-            &mint,
-            &Pubkey::default(),
-            &Pubkey::default(),
-            0,
-            data_fetcher,
-        )
-        .await
-        .map_err(|e| anyhow!(e))?;
 
         // Skip 4, source, mint, destination, authority
         let transfer_hook_required_accounts = transfer_ix.accounts[4..].to_vec();
