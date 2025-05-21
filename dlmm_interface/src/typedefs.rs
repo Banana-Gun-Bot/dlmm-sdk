@@ -187,7 +187,9 @@ pub struct ProtocolFee {
     pub amount_y: u64,
 }
 #[repr(C)]
-#[derive(Clone, Debug, BorshDeserialize, BorshSerialize, PartialEq, Pod, Copy, Zeroable)]
+#[derive(
+    Clone, Debug, BorshDeserialize, BorshSerialize, PartialEq, Pod, Copy, Zeroable, Default,
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RewardInfo {
     pub mint: Pubkey,
